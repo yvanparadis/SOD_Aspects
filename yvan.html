@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Chat</title>
+    <style>
+        body {
+            background: linear-gradient(45deg, #ff5733, #33ff57, #3357ff);
+            background-size: 400% 400%;
+            animation: gradientBG 10s infinite alternate;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 100% 50%; }
+        }
+        .chat-container {
+            width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+        .messages {
+            height: 300px;
+            overflow-y: auto;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 10px;
+            padding: 10px;
+        }
+        .message {
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .own {
+            background: #33ff57;
+            text-align: right;
+        }
+        .other {
+            background: #3357ff;
+            color: white;
+            text-align: left;
+        }
+        input {
+            width: 80%;
+            padding: 8px;
+        }
+        button {
+            padding: 8px;
+            background: #ff5733;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="messages" id="messages"></div>
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const socket = new WebSocket('ws://localhost:3000');
+        const messagesDiv = document.getElementById('messages');
+
+        socket.onmessage = function(event) {
+            const message = document.createElement('div');
+            message.classList.add('message', 'other');
+            message.textContent = event.data;
+            messagesDiv.appendChild(message);
+        };
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (input.value.trim() !== '') {
+                const message = document.createElement('div');
+                message.classList.add('message', 'own');
+                message.textContent = input.value;
+                messagesDiv.appendChild(message);
+                socket.send(input.value);
+                input.value = '';
+            }
+        }
+    </script>
+</body>
+</html>
