@@ -3,94 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Colorful Chat</title>
+    <title>Display Pexels Photos</title>
     <style>
         body {
-            background: linear-gradient(45deg, #ff5733, #33ff57, #3357ff);
-            background-size: 400% 400%;
-            animation: gradientBG 10s infinite alternate;
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            text-align: center;
+            background-color: #f0f0f0;
             margin: 0;
         }
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            100% { background-position: 100% 50%; }
+        /* Navbar style */
+        nav {
+            background-color: #333;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .chat-container {
-            width: 400px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        nav img {
+            height: 40px; /* Logo size */
         }
-        .messages {
-            height: 300px;
-            overflow-y: auto;
-            border-bottom: 2px solid #ddd;
-            margin-bottom: 10px;
+        #searchBox {
+            display: flex;
+            justify-content: center;
+        }
+        #searchBox input {
             padding: 10px;
+            font-size: 16px;
+            width: 250px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
         }
-        .message {
-            padding: 5px;
-            margin: 5px 0;
-            border-radius: 5px;
-        }
-        .own {
-            background: #33ff57;
-            text-align: right;
-        }
-        .other {
-            background: #3357ff;
-            color: white;
-            text-align: left;
-        }
-        input {
-            width: 80%;
-            padding: 8px;
-        }
-        button {
-            padding: 8px;
-            background: #ff5733;
+        #searchBox button {
+            padding: 10px;
+            background-color: #007bff;
             color: white;
             border: none;
             cursor: pointer;
+            border-radius: 4px;
+        }
+        #searchBox button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Gallery layout */
+        #gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+        }
+        .photo {
+            margin: 10px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 200px;
+            transition: transform 0.3s ease;
+        }
+        .photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <h1>Y..chat</h1>
-        <div class="messages" id="messages"></div>
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button onclick="sendMessage()">Send</button>
-    </div>
+
+    <!-- Navbar with Logo and Search Box -->
+    <nav>
+        <img src="https://via.placeholder.com/150x40?text=Logo" alt="Logo"> <!-- Replace with your actual logo -->
+        <div id="searchBox">
+            <input type="text" id="searchQuery" placeholder="Search for images...">
+            <button onclick="searchImages()">Search</button>
+        </div>
+    </nav>
+
+    <h1>Photo Gallery</h1>
+    <div id="gallery"></div>
 
     <script>
-        const socket = new WebSocket('ws://localhost:3000');
-        const messagesDiv = document.getElementById('messages');
+        const apiKey = "bqqHAEl5vh9YEj4OO9O3ZEQQg8wRtsWBzwyQpu0L8C7Wbj3NCnPC7kev";
+        const gallery = document.getElementById("gallery");
 
-        socket.onmessage = function(event) {
-            const message = document.createElement('div');
-            message.classList.add('message', 'other');
-            message.textContent = event.data;
-            messagesDiv.appendChild(message);
-        };
+        // Function to fetch images based on the search query
+        function searchImages() {
+            const query = document.getElementById("searchQuery").value;
+            const url = query
+                ? `https://api.pexels.com/v1/search?query=${query}&per_page=12`
+                : "https://api.pexels.com/v1/curated?per_page=12";  // Default to curated if no query is entered
 
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            if (input.value.trim() !== '') {
-                const message = document.createElement('div');
-                message.classList.add('message', 'own');
-                message.textContent = input.value;
-                messagesDiv.appendChild(message);
-                socket.send(input.value);
-                input.value = '';
-            }
+            fetch(url, { headers: { Authorization: apiKey } })
+                .then(response => response.json())
+                .then(data => {
+                    displayImages(data.photos);
+                })
+                .catch(error => console.error("Error fetching data:", error));
         }
+
+        // Function to display fetched images in the gallery
+        function displayImages(photos) {
+            gallery.innerHTML = "";  // Clear the gallery before displaying new images
+            photos.forEach(photo => {
+                const photoDiv = document.createElement("div");
+                photoDiv.className = "photo";
+                const img = document.createElement("img");
+                img.src = photo.src.medium;  // Medium size image
+                photoDiv.appendChild(img);
+                gallery.appendChild(photoDiv);
+            });
+        }
+
+        // Fetch default curated images on page load
+        document.addEventListener("DOMContentLoaded", function () {
+            searchImages();  // Default to curated photos when the page loads
+        });
     </script>
+
 </body>
 </html>
