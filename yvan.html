@@ -3,125 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Display Pexels Photos</title>
+    <title>Movie Box Explorer</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f0f0f0;
+            background-color: #f4f4f4;
             margin: 0;
+            padding: 0;
         }
-        /* Navbar style */
-        nav {
-            background-color: #333;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        nav img {
-            height: 40px; /* Logo size */
-        }
-        #searchBox {
-            display: flex;
-            justify-content: center;
-        }
-        #searchBox input {
-            padding: 10px;
-            font-size: 16px;
-            width: 250px;
-            margin-right: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-        #searchBox button {
-            padding: 10px;
-            background-color: #007bff;
+        header {
+            background: #333;
             color: white;
-            border: none;
+            padding: 15px;
+        }
+        input {
+            padding: 10px;
+            width: 80%;
+            max-width: 400px;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px;
             cursor: pointer;
-            border-radius: 4px;
         }
-        #searchBox button:hover {
-            background-color: #0056b3;
-        }
-
-        /* Gallery layout */
-        #gallery {
+        main {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            padding: 20px;
         }
-        .photo {
+        section {
+            margin: 20px;
+        }
+        .movie {
+            cursor: pointer;
+            border: 1px solid #ccc;
+            padding: 10px;
             margin: 10px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            overflow: hidden;
+            background: white;
             width: 200px;
-            transition: transform 0.3s ease;
-        }
-        .photo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        .photo:hover {
-            transform: scale(1.05);
         }
     </style>
 </head>
 <body>
-
-    <!-- Navbar with Logo and Search Box -->
-    <nav>
-        <img src="https://via.placeholder.com/150x40?text=Logo" alt="Logo"> <!-- Replace with your actual logo -->
-        <div id="searchBox">
-            <input type="text" id="searchQuery" placeholder="Search for images...">
-            <button onclick="searchImages()">Search</button>
-        </div>
-    </nav>
-
-    <h1>Photo Gallery</h1>
-    <div id="gallery"></div>
-
+    <header>
+        <h1>Movie Box @!net</h1>
+        <input type="text" id="searchBar" placeholder="Search movies...">
+        <button id="searchBtn">Search</button>
+    </header>
+    
+    <main>
+        <section id="movies"></section>
+        <section id="movieDetails"></section>
+        <section id="youtubeResults"></section>
+    </main>
+    
     <script>
-        const apiKey = "bqqHAEl5vh9YEj4OO9O3ZEQQg8wRtsWBzwyQpu0L8C7Wbj3NCnPC7kev";
-        const gallery = document.getElementById("gallery");
+        document.addEventListener("DOMContentLoaded", () => {
+            const API_KEY = "7bdcdd64";
+            const YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY";
+            const moviesSection = document.getElementById("movies");
+            const movieDetailsSection = document.getElementById("movieDetails");
+            const searchBtn = document.getElementById("searchBtn");
+            const searchBar = document.getElementById("searchBar");
+            const youtubeResults = document.getElementById("youtubeResults");
 
-        // Function to fetch images based on the search query
-        function searchImages() {
-            const query = document.getElementById("searchQuery").value;
-            const url = query
-                ? `https://api.pexels.com/v1/search?query=${query}&per_page=12`
-                : "https://api.pexels.com/v1/curated?per_page=12";  // Default to curated if no query is entered
+            async function searchMovies(query) {
+                try {
+                    let response = await fetch(`http://www.omdbapi.com/?s=${query}&type=movie&apikey=${API_KEY}`);
+                    let data = await response.json();
+                    if (data.Search) {
+                        displayMovies(data.Search);
+                    } else {
+                        moviesSection.innerHTML = "<p>No movies found.</p>";
+                    }
+                } catch (error) {
+                    console.error("Error fetching movies:", error);
+                }
+            }
 
-            fetch(url, { headers: { Authorization: apiKey } })
-                .then(response => response.json())
-                .then(data => {
-                    displayImages(data.photos);
-                })
-                .catch(error => console.error("Error fetching data:", error));
-        }
+            function displayMovies(movies) {
+                moviesSection.innerHTML = "";
+                movies.forEach(movie => {
+                    let div = document.createElement("div");
+                    div.classList.add("movie");
+                    div.innerHTML = `<h3>${movie.Title}</h3><img src="${movie.Poster}" alt="${movie.Title}"><p>Year: ${movie.Year}</p>`;
+                    div.addEventListener("click", () => fetchMovieDetails(movie.imdbID));
+                    moviesSection.appendChild(div);
+                });
+            }
 
-        // Function to display fetched images in the gallery
-        function displayImages(photos) {
-            gallery.innerHTML = "";  // Clear the gallery before displaying new images
-            photos.forEach(photo => {
-                const photoDiv = document.createElement("div");
-                photoDiv.className = "photo";
-                const img = document.createElement("img");
-                img.src = photo.src.medium;  // Medium size image
-                photoDiv.appendChild(img);
-                gallery.appendChild(photoDiv);
+            async function fetchMovieDetails(movieID) {
+                try {
+                    let response = await fetch(`http://www.omdbapi.com/?i=${movieID}&apikey=${API_KEY}`);
+                    let movie = await response.json();
+                    displayMovieDetails(movie);
+                    searchYouTube(`${movie.Title} trailer`);
+                } catch (error) {
+                    console.error("Error fetching movie details:", error);
+                }
+            }
+
+            function displayMovieDetails(movie) {
+                movieDetailsSection.innerHTML = `
+                    <h2>${movie.Title}</h2>
+                    <img src="${movie.Poster}" alt="${movie.Title}">
+                    <p>${movie.Plot}</p>
+                    <p><strong>Director:</strong> ${movie.Director}</p>
+                    <p><strong>Actors:</strong> ${movie.Actors}</p>
+                    <p><strong>Year:</strong> ${movie.Year}</p>
+                    <p><strong>IMDB Rating:</strong> ${movie.imdbRating}</p>
+                `;
+            }
+
+            async function searchYouTube(query) {
+                try {
+                    let response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&key=${YOUTUBE_API_KEY}`);
+                    let data = await response.json();
+                    displayYouTubeResults(data.items);
+                } catch (error) {
+                    console.error("Error fetching YouTube results:", error);
+                }
+            }
+
+            function displayYouTubeResults(videos) {
+                youtubeResults.innerHTML = "";
+                videos.forEach(video => {
+                    let div = document.createElement("div");
+                    div.innerHTML = `
+                        <h3>${video.snippet.title}</h3>
+                        <iframe width="300" height="200" src="https://www.youtube.com/embed/${video.id.videoId}" frameborder="0" allowfullscreen></iframe>
+                    `;
+                    youtubeResults.appendChild(div);
+                });
+            }
+
+            searchBtn.addEventListener("click", () => {
+                let query = searchBar.value;
+                if (query) {
+                    searchMovies(query);
+                }
             });
-        }
-
-        // Fetch default curated images on page load
-        document.addEventListener("DOMContentLoaded", function () {
-            searchImages();  // Default to curated photos when the page loads
         });
     </script>
-
 </body>
 </html>
